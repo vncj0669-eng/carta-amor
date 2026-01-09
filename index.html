@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Ti</title>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        :root {
+            --bg-color: #fdf5e6;
+            /* Old Lace */
+            --paper-color: #fffaf0;
+            /* White Smoke */
+            --text-color: #4a4a4a;
+            --accent-color: #d18f9c;
+            /* Soft Pink / Rose */
+            --font-main: 'Georgia', 'Times New Roman', serif;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            /* Prevenir selección de texto accidental */
+        }
+
+        /* Utilidad para ocultar pantallas */
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- PANTALLA 1: LOADER --- */
+        #screen-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeOut 1s forwards;
+            animation-delay: 3s;
+            /* Duración simulada */
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 100;
+            background: var(--bg-color);
+        }
+
+        .heart-loader {
+            width: 50px;
+            height: 50px;
+            background-color: var(--accent-color);
+            transform: rotate(45deg);
+            animation: pulse 1s infinite alternate;
+            position: relative;
+        }
+
+        .heart-loader::before,
+        .heart-loader::after {
+            content: "";
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+        }
+
+        .heart-loader::before {
+            top: -25px;
+            left: 0;
+        }
+
+        .heart-loader::after {
+            top: 0;
+            left: -25px;
+        }
+
+        .loading-text {
+            margin-top: 40px;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            animation: blink 2s infinite;
+        }
+
+        /* --- PANTALLA 2: PREGUNTA (GATE) --- */
+        #screen-gate {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 90;
+            background: var(--bg-color);
+            transition: opacity 1s ease;
+        }
+
+        .gate-card {
+            background: var(--paper-color);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .gate-question {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .gate-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .gate-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .gate-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .gate-btn:hover {
+            transform: scale(1.05);
+            background: #c07a8b;
+        }
+
+        .error-msg {
+            color: #d18f9c;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* --- PANTALLA 3: PUZZLE (CARTA ROTA) --- */
+        #screen-puzzle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 80;
+            background: var(--bg-color);
+            overflow: hidden;
+            transition: opacity 1s ease;
+        }
+
+        #puzzle-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 800px;
+        }
+
+        .intro-msg {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 1rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Estilo base de los fragmentos */
+        .piece {
+            position: absolute;
+            width: 250px;
+            height: 350px;
+            background-color: var(--paper-color);
+            /* Patrón de líneas para que parezca papel escrito incluso si vacío */
+            background-image: repeating-linear-gradient(transparent, transparent 29px, #e5e5e5 30px);
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            font-size: 0.8rem;
+            overflow: hidden;
+            cursor: grab;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .piece.is-dragging {
+            cursor: grabbing;
+            z-index: 1000 !important;
+            transform: scale(1.05) rotate(0deg) !important;
+            box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .piece.locked {
+            cursor: default;
+            z-index: 1;
+            transition: transform 0.5s ease, top 0.5s ease, left 0.5s ease;
+            box-shadow: none;
+            border: none;
+            background-image: none;
+            /* Quitar lineas al unir si se desea, o mantener. Mejor mantener para coherencia */
+            background-image: repeating-linear-gradient(transparent, transparent 29px, #e5e5e5 30px);
+        }
+
+        /* Contenido interno de la pieza que simula ser parte de la hoja completa */
+        .piece-content {
+            position: absolute;
+            width: 500px;
+            height: 700px;
+            padding: 50px;
+            /* Padding aumentado */
+            box-sizing: border-box;
+            background-color: transparent;
+            /* Fondo transparente para ver las lineas de la pieza */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Centrar horizontalmente */
+            justify-content: center;
+            /* Centrar verticalmente para ocupar todo el espacio */
+            text-align: left;
+            pointer-events: none;
+        }
+
+        .piece-content h3 {
+            width: 100%;
+            text-align: left;
+            font-size: 1.8rem;
+            /* Titulo más grande */
+            margin-bottom: 30px;
+        }
+
+        .piece-content p {
+            margin-bottom: 1.5em;
+            width: 100%;
+            font-size: 1.2rem;
+            /* Texto más grande */
+            line-height: 1.8;
+            /* Mayor espaciado */
+        }
+
+        /* Área central donde armar el puzzle. Visible sutilmente */
+        #drop-zone {
+            position: absolute;
+            width: 500px;
+            height: 700px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            z-index: 0;
+            pointer-events: none;
+            /* No bloquear clicks */
+        }
+
+        /* Mensaje de éxito del puzzle */
+        #puzzle-success-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        /* --- PANTALLA 4: CARTA FINAL (REVELACIÓN) --- */
+        #screen-final {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 70;
+            background: var(--bg-color);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease;
+        }
+
+        #final-letter-paper {
+            width: 90%;
+            max-width: 500px;
+            height: auto;
+            max-height: 80vh;
+            background: var(--paper-color);
+
+            /* Mismo estilo visual que las piezas */
+            background-image: repeating-linear-gradient(transparent, transparent 29px, #e5e5e5 30px);
+
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-radius: 2px;
+            overflow-y: auto;
+            position: relative;
+            animation: floatPaper 6s ease-in-out infinite;
+
+            /* Tipografia mejorada */
+            font-size: 1.1rem;
+            line-height: 1.8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Centrado vertical si es corto */
+            min-height: 500px;
+            /* Asegurar altura mínima */
+        }
+
+        #final-letter-paper h3 {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            margin-top: 0;
+        }
+
+
+        /* Animaciones */
+        @keyframes pulse {
+            0% {
+                transform: scale(1) rotate(45deg);
+            }
+
+            100% {
+                transform: scale(1.1) rotate(45deg);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        @keyframes floatPaper {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .piece {
+                width: 150px;
+                height: 210px;
+            }
+
+            .piece-content,
+            #drop-zone {
+                width: 300px;
+                height: 420px;
+                margin: auto;
+            }
+
+            #final-letter-paper {
+                padding: 25px;
+            }
+        }
+
+        #final-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        /* FIX: Permitir clicks en los controles y en la carta misma */
+        #final-controls,
+        #final-letter-paper {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PANTALLA 1: LOADER -->
+    <div id="screen-loader">
+        <div class="heart-loader"></div>
+        <div class="loading-text">Cargando pensamientos...</div>
+    </div>
+
+    <!-- PANTALLA 2: PREGUNTA -->
+    <div id="screen-gate" class="hidden">
+        <div class="gate-card">
+            <div class="gate-question">
+                <p>Para asegurarme de que eres tú...</p>
+                <p><strong>¿Cuando nos cansamos?</strong></p>
+                <!-- ¡USUARIO! PUEDES EDITAR LA PREGUNTA ARRIBA -->
+            </div>
+            <input type="text" id="gate-input" class="gate-input" placeholder="Ej: 05/11/2021">
+            <button id="gate-btn" class="gate-btn">Responder</button>
+            <div id="error-msg" class="error-msg">Mmm... intenta recordar de nuevo.</div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: PUZZLE -->
+    <div id="screen-puzzle" class="hidden">
+        <div class="intro-msg">Ups, la carta se rompió... Ayúdame a armarla.</div>
+        <div id="puzzle-area">
+            <div id="drop-zone"></div>
+            <!-- LAS PIEZAS SE GENERAN CON JS -->
+        </div>
+        <div id="puzzle-success-msg">
+            <h2>¡Lo lograste!</h2>
+            <p>Leyendo...</p>
+        </div>
+    </div>
+
+    <!-- PANTALLA 4: FINAL -->
+    <div id="screen-final">
+        <div id="final-controls">
+            <button class="control-btn" id="btn-zoom-out" title="Reducir letra">-</button>
+            <button class="control-btn" id="btn-zoom-in" title="Aumentar letra">+</button>
+        </div>
+        <div id="final-letter-paper">
+            <h3>Mi cuchufli…,</h3>
+            <p>
+                Eres lo mejor que me ha pasado, estoy muy feliz de que por fin estemos mejor, ya se que igual tenemos
+                nuestras discusiones, pero
+                ya no tan fuertes como antes, ahora son solo pq somos enojes, me pone triste igual, pero me relaja ya q
+                no son discusiones fuertes.
+            </p>
+            <p>
+                Quiero q sepas q quiero estar toda mi vida contigo, tener una familia contigo, cumplir todo lo q nos
+                prometimos, eres el amor de mi vida,
+                te amo demasiado mi niña preciosa, me encanta estar contigo, siempre quiero hablar mas contigo, eres
+                todo para mi, ya no te quiero perder.
+            </p>
+            <p>
+                Te voy amar toda mi vida...
+            </p>
+            <p style="text-align: right; margin-top: 30px;">
+                Con cariño el mas pro de los pros<br>
+                <strong>arturinho el provasinho</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN (EDITABLE POR EL USUARIO)
+        const CORRECT_ANSWER = "18/12/2023"; // Respuesta correcta
+        const LETTER_TEXT_HTML = document.getElementById('final-letter-paper').innerHTML;
+
+        // ESTADO GLOBAL
+        const screens = {
+            loader: document.getElementById('screen-loader'),
+            gate: document.getElementById('screen-gate'),
+            puzzle: document.getElementById('screen-puzzle'),
+            final: document.getElementById('screen-final')
+        };
+
+        // ZOOM LOGIC
+        const paper = document.getElementById('final-letter-paper');
+        let currentZoom = 1.1; // Coincide con CSS font-size 1.1rem aprox si lo basamos en rem
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            currentZoom += 0.1;
+            paper.style.fontSize = currentZoom + 'rem';
+        });
+
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.1;
+                paper.style.fontSize = currentZoom + 'rem';
+            }
+        });
+
+
+        // --- INICIO: LOADER ---
+        // Simplemente esperamos a que termine la animación CSS o un timer
+        setTimeout(() => {
+            screens.loader.classList.add('hidden');
+            screens.gate.classList.remove('hidden');
+            screens.gate.style.opacity = 1;
+        }, 3500);
+
+        // --- GATE: PREGUNTA ---
+        const gateInput = document.getElementById('gate-input');
+        const gateBtn = document.getElementById('gate-btn');
+        const errorMsg = document.getElementById('error-msg');
+
+        gateBtn.addEventListener('click', checkAnswer);
+        gateInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        function checkAnswer() {
+            const val = gateInput.value.trim();
+            // Validación simple (puedes hacerla más flexible si quieres)
+            if (val === CORRECT_ANSWER) {
+                // Éxito
+                screens.gate.style.opacity = 0;
+                setTimeout(() => {
+                    screens.gate.classList.add('hidden');
+                    startPuzzle();
+                }, 1000);
+            } else {
+                // Error
+                errorMsg.style.opacity = 1;
+                gateInput.style.borderColor = 'red';
+                setTimeout(() => {
+                    errorMsg.style.opacity = 0;
+                    gateInput.style.borderColor = '#ddd';
+                }, 2000);
+            }
+        }
+
+        // --- PUZZLE: LOGICA ---
+        const puzzleArea = document.getElementById('puzzle-area');
+        const dropZone = document.getElementById('drop-zone');
+        const successMsg = document.getElementById('puzzle-success-msg');
+
+        // Definición de las piezas (4 cuadrantes) para simular roto
+        // Usamos clip-path para formas irregulares
+        const piecesData = [
+            {
+                id: 'p1',
+                clip: 'polygon(0% 0%, 100% 0%, 85% 100%, 0% 80%)',
+                topArg: 0, leftArg: 0, // Posición correcta (relativa al contenedor interno de referencia)
+                contentTop: 0, contentLeft: 0
+            },
+            {
+                id: 'p2',
+                clip: 'polygon(0% 0%, 100% 0%, 100% 100%, 15% 85%)',
+                topArg: 0, leftArg: 50, // 50% left
+                contentTop: 0, contentLeft: -100 // Shift content left 100% relative to piece width (approx)
+            },
+            {
+                id: 'p3',
+                clip: 'polygon(0% 80%, 85% 100%, 100% 100%, 0% 100%)',
+                topArg: 50, leftArg: 0,
+                contentTop: -100, contentLeft: 0
+            },
+            {
+                id: 'p4',
+                clip: 'polygon(15% 85%, 100% 0%, 100% 100%, 0% 100%)', // Ajuste para cubrir el hueco
+                // Nota: Los clip paths son aproximados para simular "roto". 
+                // Mejor simplificamos a cuadrantes rectangulares para asegurar que encaje visualmente bien
+                // o usamos clips complementarios exactos.
+                // Usemos clips rectangulares con bordes ligeramente irregulares seria complejo por codigo.
+                // Vamos a usar 4 cuadrantes simples para asegurar que el texto se lea bien al unirse.
+                clip: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', // Fallback a rects
+                topArg: 50, leftArg: 50,
+                contentTop: -100, contentLeft: -100
+            }
+        ];
+
+        // Redefinimos clips visuales "rotos" que encajen mejor
+        // Pieza 1: Top-Left
+        piecesData[0].clip = 'polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%)';
+        // Pieza 2: Top-Right (ajustada para solapar un poco o encajar)
+        piecesData[1].clip = 'polygon(0 0, 100% 0, 100% 100%, 0 85%)';
+        // Pieza 3: Bottom-Left
+        piecesData[2].clip = 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%)';
+        // Pieza 4: Bottom-Right
+        piecesData[3].clip = 'polygon(0 15%, 100% 0, 100% 100%, 0% 100%)';
+
+        // Pero para el texto continuo es vital que los offsets sean perfectos.
+        // Vamos a usar una técnica más simple para la DEMO: 
+        // Dividir la carta en 4 rectángulos exactos para asegurar legibilidad.
+        // Si el usuario quiere efecto "roto" visual, podemos añadir imagenes de bordes, 
+        // pero con CSS puro y texto, los cortes irregulares cortarán líneas de texto.
+        // Usaremos rectángulos con ligera rotación inicial.
+
+        // Reset clips to rectangles for text readability safety
+        piecesData[0].clip = 'inset(0 0 0 0)';
+        piecesData[1].clip = 'inset(0 0 0 0)';
+        piecesData[2].clip = 'inset(0 0 0 0)';
+        piecesData[3].clip = 'inset(0 0 0 0)';
+
+        let lockedCount = 0;
+
+        function startPuzzle() {
+            screens.puzzle.classList.remove('hidden');
+
+            // Dimensiones del area de juego
+            const Pwidth = dropZone.offsetWidth;
+            const Pheight = dropZone.offsetHeight;
+            const pieceW = Pwidth / 2;
+            const pieceH = Pheight / 2;
+
+            piecesData.forEach((p, index) => {
+                const el = document.createElement('div');
+                el.classList.add('piece');
+                el.id = p.id;
+                el.style.width = pieceW + 'px';
+                el.style.height = pieceH + 'px';
+                // Asignar contenido
+                // Truco: Ponemos todo el contenido dentro, y lo movemos (translate) 
+                // para mostrar solo el cuadrante correspondiente
+                const content = document.createElement('div');
+                content.classList.add('piece-content');
+                content.innerHTML = LETTER_TEXT_HTML;
+                content.style.width = Pwidth + 'px';
+                content.style.height = Pheight + 'px';
+
+                // Posicionar contenido interno
+                // topArg 0 -> top 0. topArg 50 -> top -100% (no, -50%)
+                // Si la pieza es la top-left (0,0), el contenido esta en 0,0
+                // Si la pieza es top-right (0, 50%), el contenido debe moverse a la izquierda -50% del total (o -100% del ancho pieza)
+
+                const moveLeft = index % 2 === 0 ? 0 : -pieceW;
+                const moveTop = index < 2 ? 0 : -pieceH;
+
+                content.style.transform = `translate(${moveLeft}px, ${moveTop}px)`;
+
+                el.appendChild(content);
+                puzzleArea.appendChild(el);
+
+                // Posición Target (donde debe acabar)
+                // Relativo al centro del drop-zone
+                // El dropzone está centrado.
+                // Calcularemos coordenadas relativas al puzzle-area
+                // dropZone top/left en px
+                const dzRect = dropZone.getBoundingClientRect();
+                const paRect = puzzleArea.getBoundingClientRect();
+                const dzTopRel = dzRect.top - paRect.top;
+                const dzLeftRel = dzRect.left - paRect.left;
+
+                p.targetTop = dzTopRel + (index < 2 ? 0 : pieceH);
+                p.targetLeft = dzLeftRel + (index % 2 === 0 ? 0 : pieceW);
+
+                // Posición Inicial Aleatoria (Scatter)
+                const randRot = Math.random() * 60 - 30; // -30 a 30 deg
+                const maxTop = paRect.height - pieceH;
+                const maxLeft = paRect.width - pieceW;
+
+                // Evitar que aparezcan YA en su sitio.
+                let startTop = Math.random() * maxTop;
+                let startLeft = Math.random() * maxLeft;
+
+                el.style.top = startTop + 'px';
+                el.style.left = startLeft + 'px';
+                el.style.transform = `rotate(${randRot}deg)`;
+
+                // DRAG LOGIC
+                makeDraggable(el, p);
+            });
+        }
+
+        function makeDraggable(el, pieceInfo) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            const onStart = (e) => {
+                if (el.classList.contains('locked')) return;
+                isDragging = true;
+                el.classList.add('is-dragging');
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                startX = clientX;
+                startY = clientY;
+                initialLeft = parseFloat(el.style.left);
+                initialTop = parseFloat(el.style.top);
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault(); // Evitar scroll en móvil
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                el.style.left = (initialLeft + dx) + 'px';
+                el.style.top = (initialTop + dy) + 'px';
+            };
+
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.classList.remove('is-dragging');
+                checkSnap(el, pieceInfo);
+            };
+
+            el.addEventListener('mousedown', onStart);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+
+            el.addEventListener('touchstart', onStart, { passive: false });
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+        }
+
+        function checkSnap(el, pInfo) {
+            const currentTop = parseFloat(el.style.left); // Oops, variable name mixup but logic below matters
+            // Vamos a leer directamente el style actualizado
+            const actLeft = parseFloat(el.style.left);
+            const actTop = parseFloat(el.style.top);
+
+            const dist = Math.hypot(actLeft - pInfo.targetLeft, actTop - pInfo.targetTop);
+
+            // Umbral de 50px para "imantar"
+            if (dist < 50) {
+                // LOCK
+                el.style.left = pInfo.targetLeft + 'px';
+                el.style.top = pInfo.targetTop + 'px';
+                el.style.transform = 'rotate(0deg)';
+                el.classList.add('locked');
+                lockedCount++;
+
+                if (lockedCount === 4) {
+                    onPuzzleComplete();
+                }
+            }
+        }
+
+        function onPuzzleComplete() {
+            setTimeout(() => {
+                successMsg.style.opacity = 1;
+                setTimeout(() => {
+                    screens.puzzle.style.opacity = 0;
+                    setTimeout(() => {
+                        screens.puzzle.classList.add('hidden');
+                        showFinalLetter();
+                    }, 1000);
+                }, 2000);
+            }, 500);
+        }
+
+        function showFinalLetter() {
+            screens.final.classList.remove('hidden');
+            // Force reflow
+            void screens.final.offsetWidth;
+            screens.final.style.opacity = 1;
+        }
+
+    </script>
+</body>
+
+</html>
